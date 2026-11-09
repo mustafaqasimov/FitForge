@@ -29,7 +29,7 @@ spring:
 
   jackson:
     time-zone: UTC
-    default-property-inclusion: non_null
+    default-property-inclusion: always
   web:
     error:
       include-message: always
@@ -42,7 +42,7 @@ app:
       access-token-ttl: 15m
       refresh-token-ttl: 30d
   cors:
-    allowed-origins: http://localhost:3000,http://localhost:5173
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,https://localhost}
 
 management:
   endpoints:
@@ -54,8 +54,8 @@ logging:
   level:
     root: INFO
     com.example.fitness: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE    # parol sütununu da log-a yazır, yalnız lokalda!
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: OFF    # parol sütununu da log-a yazır, yalnız lokalda!
     org.springframework.security: INFO
 
   

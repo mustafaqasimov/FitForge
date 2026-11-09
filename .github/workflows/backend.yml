@@ -1,0 +1,35 @@
+name: backend
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fitness_dev
+          POSTGRES_USER: fitness
+          POSTGRES_PASSWORD: fitness
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U fitness -d fitness_dev" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      SPRING_DOCKER_COMPOSE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: bash mvnw -B verify
+      - name: API contracts
+        run: |
+          java -jar target/FitForge-0.0.1-SNAPSHOT.jar --server.port=8081 > /tmp/fitforge.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid"' EXIT
+          for attempt in $(seq 1 60); do
+            status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8081/api/v1/me || true)
+            if [ "$status" = 401 ]; then break; fi
+            sleep 1
+          done
+          python3 tests/api_smoke.py

@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: fitforge_db
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: fitness_dev
+      POSTGRES_USER: ${DB_USERNAME:-fitness}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fitness}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${DB_PORT:-5433}:5432"
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d watchlist_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-fitness} -d fitness_dev"]
       interval: 5s
       timeout: 5s
       retries: 10
