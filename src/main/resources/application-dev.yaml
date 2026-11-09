@@ -1,0 +1,61 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fitness_dev}
+    username: ${DB_USERNAME:fitness}
+    password: ${DB_PASSWORD:fitness}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        format_sql: true
+        generate_statistics: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  jackson:
+    time-zone: UTC
+    default-property-inclusion: non_null
+  web:
+    error:
+      include-message: always
+      include-stacktrace: on_param
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-only-secret-change-me-min-32-bytes-long!!}
+      access-token-ttl: 15m
+      refresh-token-ttl: 30d
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:5173
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    root: INFO
+    com.example.fitness: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE    # parol sütununu da log-a yazır, yalnız lokalda!
+    org.springframework.security: INFO
+
+  

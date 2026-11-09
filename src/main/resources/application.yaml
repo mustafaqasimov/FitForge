@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: FitForge
+
+  profiles:
+      active: ${SPRING_PROFILES_ACTIVE:dev}
+
+server:
+  port: 8080
