@@ -15,6 +15,10 @@ def request(method,path,body=None,token=None,key=None,status=200):
 
 def run():
     email=str(uuid.uuid4())+'@example.test'; password='correct-horse-password-2026'
+    invalid=request('POST','/auth/register',dict(email=email,password='short',displayName='Tester'),status=422)
+    assert any(e['field']=='password' for e in invalid['errors'])
+    request('POST','/auth/register',dict(email=email,password=password,displayName='Tester',role='ADMIN'),status=400)
+    request('POST','/auth/login',dict(email='invalid',password=password),status=422)
     auth=request('POST','/auth/register',dict(email=email,password=password,displayName='Tester',timezone='Asia/Baku'),status=201)
     token=auth['accessToken']
     assert request('POST','/auth/login',dict(email=email,password=password))['user']['id']==auth['user']['id']

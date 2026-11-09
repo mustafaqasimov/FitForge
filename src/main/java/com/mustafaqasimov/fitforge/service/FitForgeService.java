@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.time.*;
 import java.util.*;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class FitForgeService {
   final ResourceRepository repo;
   final SecurityConfig jwt;
-  final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder(12);
 
   public FitForgeService(ResourceRepository repo, SecurityConfig jwt) {
     this.repo = repo;
@@ -175,7 +173,7 @@ public class FitForgeService {
     }
   }
 
-  Map<String, Object> tokens(Resource u, String family, String device) {
+  public Map<String, Object> tokens(Resource u, String family, String device) {
     byte[] bytes = new byte[48];
     new SecureRandom().nextBytes(bytes);
     String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -204,61 +202,6 @@ public class FitForgeService {
         "Bearer",
         "expiresIn",
         900);
-  }
-
-  public Map<String, Object> register(Map<String, Object> b) {
-    fields(b, "email,password,displayName,timezone");
-    String email = text(b.get("email"), 254).toLowerCase(Locale.ROOT);
-    fail(!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+"), "VALIDATION_ERROR");
-    fail(!(b.get("password") instanceof String), "VALIDATION_ERROR");
-    String password = (String) b.get("password");
-    fail(password == null || password.length() < 12 || password.length() > 128, "VALIDATION_ERROR");
-    String name = text(b.get("displayName"), 60);
-    Object z = b.getOrDefault("timezone", "UTC");
-    zone(z);
-    if (repo.byEmail(email).isPresent()) throw new ApiException(409, "EMAIL_IN_USE");
-    var u =
-        save(
-            "user",
-            null,
-            map(
-                "email",
-                email,
-                "passwordHash",
-                passwords.encode(hash(password)),
-                "displayName",
-                name,
-                "timezone",
-                z,
-                "weightUnit",
-                "kg",
-                "weeklyGoal",
-                3,
-                "createdAt",
-                now(),
-                "updatedAt",
-                now()));
-    return tokens(u, UUID.randomUUID().toString(), null);
-  }
-
-  public Map<String, Object> login(Map<String, Object> b) {
-    fields(b, "email,password,deviceName");
-    String email = text(b.get("email"), 254).toLowerCase(Locale.ROOT);
-    fail(
-        !(b.get("password") instanceof String) || ((String) b.get("password")).length() > 128,
-        "VALIDATION_ERROR");
-    String password = (String) b.get("password");
-    var u = repo.byEmail(email).orElse(null);
-    String encoded =
-        u == null
-            ? "$2a$12$yhnofnEDmL7otif7y1unQuNw8JFM4eFe4GafBW78DVKyA9Gpil4SS"
-            : (String) u.data.get("passwordHash");
-    boolean ok = passwords.matches(hash(password), encoded);
-    if (u == null || !ok) throw new ApiException(401, "INVALID_CREDENTIALS");
-    return tokens(
-        u,
-        UUID.randomUUID().toString(),
-        b.containsKey("deviceName") ? text(b.get("deviceName"), 100) : null);
   }
 
   @Transactional(noRollbackFor = ApiException.class)

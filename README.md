@@ -46,3 +46,23 @@ python3 tests/api_smoke.py
 The HTTP suite exercises real authentication and PostgreSQL persistence, ownership, snapshot preservation, stale versions, replay and concurrent starts, set completion, terminal repeats, dashboard aggregation and refresh reuse. It creates uniquely named test accounts; use an isolated database. CI runs migrations, the Maven test and HTTP contracts against PostgreSQL 16.
 
 Production operations (TLS ingress, backups/restore drills, monitoring, secret rotation and retention policy) belong to deployment infrastructure. The global exercise catalog can be populated by a separately authorized administrative import; no public endpoint grants global catalog writes.
+
+## Login and registration
+
+Following the WatchList layout, `AuthController` accepts `@Valid RegisterRequest` and `LoginRequest`, delegates to the `AuthService` interface / `AuthServiceImpl`, and returns a typed `AuthResponse` with a safe `UserProfileResponse`. Unknown request properties return 400; bean validation failures return 422 with field-specific errors. The FitForge contract uses `displayName` (rather than WatchList's `userName`), a 12–128 character password, and returns tokens immediately after registration.
+
+`POST /api/v1/auth/register` (201):
+
+```json
+{"email":"user@example.com","password":"example-password-2026","displayName":"İstifadəçi","timezone":"Asia/Baku"}
+```
+
+`timezone` may be omitted and defaults to `UTC`.
+
+`POST /api/v1/auth/login` (200):
+
+```json
+{"email":"user@example.com","password":"example-password-2026","deviceName":"Android"}
+```
+
+Both return `user`, `accessToken`, `refreshToken`, `tokenType: "Bearer"`, and `expiresIn: 900`. The example credentials above are documentation only; no account is created automatically.

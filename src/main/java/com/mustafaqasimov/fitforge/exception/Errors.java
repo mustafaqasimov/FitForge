@@ -22,11 +22,29 @@ public class Errors {
     return m;
   }
 
+  @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+  ResponseEntity<?> validation(
+      org.springframework.web.bind.MethodArgumentNotValidException e, HttpServletRequest request) {
+    var errors =
+        e.getBindingResult().getFieldErrors().stream()
+            .map(
+                f ->
+                    Map.of(
+                        "field",
+                        f.getField(),
+                        "code",
+                        Objects.toString(f.getCode(), "INVALID_VALUE"),
+                        "message",
+                        Objects.toString(f.getDefaultMessage(), "Invalid value")))
+            .toList();
+    return api(new ApiException(422, "VALIDATION_ERROR", Map.of("errors", errors)), request);
+  }
+
   @ExceptionHandler(ApiException.class)
   ResponseEntity<?> api(ApiException e, HttpServletRequest r) {
     var b = body(e.status, e.code, r.getRequestURI());
     b.putAll(e.extensions);
-    if (e.status == 422)
+    if (e.status == 422 && !b.containsKey("errors"))
       b.put(
           "errors",
           List.of(

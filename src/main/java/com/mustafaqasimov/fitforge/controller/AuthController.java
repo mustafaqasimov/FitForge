@@ -1,6 +1,10 @@
 package com.mustafaqasimov.fitforge.controller;
 
+import com.mustafaqasimov.fitforge.dto.request.*;
+import com.mustafaqasimov.fitforge.dto.response.AuthResponse;
 import com.mustafaqasimov.fitforge.service.FitForgeService;
+import com.mustafaqasimov.fitforge.service.interfaces.AuthService;
+import jakarta.validation.Valid;
 import java.util.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -9,11 +13,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
   final FitForgeService service;
+  final AuthService authService;
   final com.mustafaqasimov.fitforge.service.RateLimitService limits;
 
   public AuthController(
-      FitForgeService service, com.mustafaqasimov.fitforge.service.RateLimitService limits) {
+      FitForgeService service,
+      AuthService authService,
+      com.mustafaqasimov.fitforge.service.RateLimitService limits) {
     this.service = service;
+    this.authService = authService;
     this.limits = limits;
   }
 
@@ -34,19 +42,19 @@ public class AuthController {
   }
 
   @PostMapping("/register")
-  public ResponseEntity<?> register(
-      @RequestBody Map<String, Object> b, jakarta.servlet.http.HttpServletRequest request) {
-    check(request, b);
+  public ResponseEntity<AuthResponse> register(
+      @Valid @RequestBody RegisterRequest b, jakarta.servlet.http.HttpServletRequest request) {
+    check(request, Map.of("email", b.getEmail()));
     return ResponseEntity.status(201)
         .cacheControl(CacheControl.noStore())
-        .body(service.register(b));
+        .body(authService.register(b));
   }
 
   @PostMapping("/login")
-  public ResponseEntity<?> login(
-      @RequestBody Map<String, Object> b, jakarta.servlet.http.HttpServletRequest request) {
-    check(request, b);
-    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.login(b));
+  public ResponseEntity<AuthResponse> login(
+      @Valid @RequestBody LoginRequest b, jakarta.servlet.http.HttpServletRequest request) {
+    check(request, Map.of("email", b.getEmail()));
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(authService.login(b));
   }
 
   @PostMapping("/refresh")
